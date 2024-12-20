@@ -1,0 +1,67 @@
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+
+    frontend:
+      build:
+        context: ./frontend-app
+      ports:
+        - "8081:80"
+      depends_on:
+        - backend
+      networks:
+        - app-tier
+
+    backend:
+      container_name: news_backend
+      build:
+        context: ./backend-app/docker/
+      ports:
+        - "8080:80"
+      depends_on:
+        - mysql
+      env_file:
+        - ./backend-app/.docker.env
+      volumes:
+        - ./backend-app:/var/www/html
+      networks:
+        - app-tier
+      environment:
+        APP_ENV: local
+
+    mysql:
+      image: mysql:8.1
+      restart: unless-stopped
+      environment:
+        MYSQL_DATABASE: news_db
+        MYSQL_ROOT_PASSWORD: UuGRe4FNP9mcPL3P
+        MYSQL_PASSWORD: 9b2NMt3HpfD7BV43
+        MYSQL_USER: am5
+      volumes:
+        - mysql:/var/lib/mysql
+        - ./docker.mysql:/docker-entrypoint-initdb.d
+      ports:
+        - 13306:3306
+      networks:
+        - app-tier
+
+    mysql_test:
+      container_name: news-mysql-test
+      image: mysql:8.1
+      networks:
+        - app-tier
+      ports:
+        - 13307:3306
+      volumes:
+        - ./docker/volumes/mysql_test:/var/lib/mysql
+      environment:
+        MYSQL_DATABASE: news_test
+        MYSQL_ROOT_PASSWORD: UuGRe4FNP9mcPL3P
+        MYSQL_USER: am5
+        MYSQL_PASSWORD: 9b2NMt3HpfD7BV43
+
+volumes:
+  mysql:
+    driver: "local"
